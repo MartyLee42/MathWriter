@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <link rel="stylesheet" type="text/css" href="main2.css" media="screen" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    </head>
+
+
+    <body>
+        <div class = "menu">
+            <div class = "save-button" onclick = "saveConspect()">
+                <img src = "save-button.png" alt= ""  height = "30px" width = "30px"/>
+            </div>
+            <div>
+                test
+            </div>
+        </div>
+
+        <div class = "conspect">
+
+            <div class = "conspect-titles">
+                <div class = "edit-button-container">
+                <div class = "edit-titles-button" onclick = "editTitlesClick(this)">
+                    Edit
+                </div>
+            </div>
+            </div>
+
+            <div class = "conspect-write-body">
+
+
+
+
+                <div class = "add-button-container">
+                    <div class = 'add-button' onclick="addBlock('','')">
+                        Add new block
+                    </div>
+                </div>
+            </div>
+
+
+            <div class = "conspect-comments">
+
+            </div>
+
+        </div>
+    </body>
+
+
+
+
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css" integrity="sha384-qCEsSYDSH0x5I45nNW4oXemORUZnYFtPy/FqB/OjqxabTMW5HVaaH9USK4fN3goV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.js" integrity="sha384-YFVvRUwgqxkAVN9bmAVLsKilmOKfQLyUx0ZlmDNs0aBUTsvMLnRxE3Km0NrZa0i9" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"></script>
+
+    <script nomodule defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.js" integrity="sha384-YFVvRUwgqxkAVN9bmAVLsKilmOKfQLyUx0ZlmDNs0aBUTsvMLnRxE3Km0NrZa0i9" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css" integrity="sha384-qCEsSYDSH0x5I45nNW4oXemORUZnYFtPy/FqB/OjqxabTMW5HVaaH9USK4fN3goV" crossorigin="anonymous">
+
+    <script>
+        function addBlockBefore(content, id) {
+            var new_block = $('<div>', {class : "conspect-block",
+                                    "text-id" : id}).append(
+                            $('<div>',{class : "conspect-block-write-area",
+                             contenteditable : true,
+                                        text : content})).append(
+                            $(`<div class = "conspect-block-compiled-area">
+                               </div>
+                               <div class = "tree" style='display : none'>
+                               </div>
+                               <div class = "compile-button" onclick="compileMaths(this)">
+                                  Compile
+                               </div>`));
+            console.log($(new_block));
+            $(".add-button-container").before(new_block);
+        }
+
+        function addBlock(content, id) {
+            if (id === '') {
+                $.ajax({
+                    type: "POST",
+                    url : endpoint + "conspect/" + conspect_id + "/texts",
+                    data : JSON.stringify({text: ""}),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success : function(data) {
+                        addBlockBefore("", data["id"])
+                    }
+                });
+            } else {
+                addBlockBefore(content, id);
+            }
+        }
+
+        function saveConspect() {
+            console.log("save");
+            $(".conspect-block").each(function(i,el) {
+                var id = $(el).attr("text-id");
+                var text = $(el).find(".conspect-block-write-area").text();
+                $.ajax({
+                    type : "POST",
+                    url : endpoint + "conspect/" + conspect_id + "/texts/" + id,
+                    data : JSON.stringify({text: text}),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json"
+                });
+            });
+
+        }
+
+        function compileMaths(el) {
+            var text = $(el).siblings(".conspect-block-write-area").text();
+            var write_block = $(el).siblings(".conspect-block-write-area");
+            var compiled_block = $(el).siblings(".conspect-block-compiled-area");
+
+            var parsed = lemmatize(text);
+            var root = parse(new Lexer(parsed));
+
+            $(el).siblings(".conspect-block-compiled-area").html(childrenToString(root));
+            renderMathInElement($(el).siblings(".conspect-block-compiled-area")[0],
+                {delimiters : [
+                  {left: "$$", right: "$$", display: true},
+                  {left: "$", right: "$", display: false},
+                  {left: "\\(", right: "\\)", display: false},
+                  {left: "\\[", right: "\\]", display: true}
+                ]});
+            $(el).attr("onclick", "makeEditable(this)");
+            $(el).text("Edit");
+
+            $(el).siblings(".tree").text(JSON.stringify(root));
+
+            write_block.hide();
+            compiled_block.show();
+        }
+
+        function makeEditable(el) {
+            $(el).attr("onclick", "compileMaths(this)");
+            $(el).text("Compile");
+            var write_block = $(el).siblings(".conspect-block-write-area");
+            var compiled_block = $(el).siblings(".conspect-block-compiled-area");
+
+            write_block.show();
+            compiled_block.hide();
+        }
+
+        function lemmatize(text) {
+            text = text.replace(/\s\s+/g, ' ');
+            text = text.replace(/\s+$/g,'');
+
+            var i = 0;
+            var tag_exp = /<.*?>/g;
+            let result;
+            var parsed = []
+
+            while (result = tag_exp.exec(text)) {
+                let idx = result.index;
+                let tag = result[0];
+
+                if (tags.indexOf(getTag(tag)) === -1) {
+                    continue;
+                }
+
+                let new_text = text.slice(i, idx).replace(/\s+$/g,'');
+                new_text = new_text.replace(/^\s+/g,'')
+                if (new_text !== '') {
+                    parsed.push({"token" : new_text, "type" : "text"});
+                }
+
+                var tag_type = isOpenTag(tag)?"open_tag":"close_tag";
+                parsed.push({"token":tag, "type" : tag_type});
+                i = idx + tag.length;
+            }
+            let new_text = text.slice(i, text.length).replace(/\s+$/g,'');
+            new_text = new_text.replace(/^\s+/g,'')
+            if (new_text !== '') {
+                parsed.push({"token" : new_text, "type": "text"});
+            }
+
+            return parsed;
+        }
+
+        class Lexer {
+            constructor(tokens) {
+                this.idx = 0
+                this.tokens = tokens;
+                this.current_token = this.tokens[0]
+            }
+
+            eat() {
+                this.idx = this.idx + 1;
+                this.current_token = this.tokens[this.idx];
+                return this.current_token;
+            }
+        }
+
+        function parse(lexer) {
+            var children = [];
+
+            while(lexer.current_token) {
+                if (lexer.current_token["type"] === "text" ) {
+                    children.push({"type": "text", "text" : lexer.current_token["token"]});
+                    lexer.eat();
+                } else {
+                    if (lexer.current_token["type"] === "open_tag" ) {
+                        children.push(parseTag(lexer));
+                    } else {
+                        return children;
+                    }
+                }
+            }
+
+            return children;
+        }
+
+        function parseTag(lexer) {
+            var tag = {"name" : getTag(lexer.current_token["token"]),
+                       "type" : "tag",
+                   "children" : [],
+                    "options" : getOptions(lexer.current_token["token"]
+                )};
+            lexer.eat();
+            tag["children"] = parse(lexer);
+            lexer.eat();
+
+            return tag
+        }
+
+        function isOpenTag(text) {
+            if (text) {
+                return text.slice(0,2) !== "</";
+            }
+            return false;
+        }
+        function getTag(text) {
+            var tag = text.split(" ")[0].replace("<","").replace(">","");
+            if (tag[0] == "/") {
+                tag = tag.slice(1);
+            }
+            return tag;
+        }
+        function getOptions(text) {
+            var options = {};
+            console.log(text);
+
+            for (const i of text.replace(">","").split(" ").slice(1)) {
+                var key = i.split("=")[0];
+                var value = i.split("=")[1];
+                options[key] = value;
+            }
+
+            return options;
+        }
+
+        function elementToString(x) {
+            if (x["type"] === "text") {
+                return x["text"]
+            } else if (x["type"] === "tag") {
+                return tags_dict[x["name"]](x);
+            }
+            return ""
+        }
+
+        function childrenToString(children) {
+            var res = "";
+            for (const c of children) {
+                res += " " + elementToString(c);
+            }
+
+            return res;
+        }
+
+        function textToString(text) {
+            return text["text"];
+        }
+
+        function noneToString(tag) {
+            var res = "";
+
+            return res;
+        }
+
+        const tags_dict = {"Def" : defToString,
+                            "Th" : theoremToString,
+                          "Idea" : ideaToString,
+                         "Proof" : proofToString,
+                          "Term" : termToString,
+                             "L" : linkToString}
+        const tags = Object.keys(tags_dict);
+        console.log(tags);
+
+        function linkToString(text) {
+            var res = "";
+            res += childrenToString(text["children"]);
+            return res;
+        }
+
+        function theoremToString(tag) {
+            var res = "<div class = \"theorem\"><h3 class = \"theorem-title\">Theorem</h3>";
+
+            var children = [];
+            var proof;
+
+            for (var i of tag["children"]) {
+                console.log(i);
+                if (i["name"] === "Proof") {
+                    proof = i;
+                } else {
+                    children.push(i);
+                }
+            }
+
+            res += "<div class=\"theorem-content\">" + childrenToString(children) + proofToString(proof)  + "</div>";
+            res += "</div>";
+            return res;
+        }
+
+        function defToString(tag) {
+            var res = "<div class = \"theorem\"><h3 class = \"theorem-title\">Definition</h3>";
+
+            res +=  childrenToString(tag["children"])
+            res += "</div>";
+            return res;
+        }
+
+        function termToString(tag) {
+            var res = "";
+
+            res += " <b><i>" + childrenToString(tag["children"]) + "</b></i>";
+
+            return res;
+        }
+
+        function ideaToString(tag) {
+            var res = "";
+            res += " " + childrenToString(tag["children"]);
+            return res;
+        }
+
+        function proofToString(tag) {
+            var res = "";
+            res += "<h3>Proof</h3>" + childrenToString(tag["children"]);
+            return res;
+        }
+
+        function tagToString(tag) {
+            var res = "";
+            res += tags_dict[tag["name"]](tag);
+            return res;
+        }
+
+
+        function isInViewport(el) {
+            const rect = el.getBoundingClientRect();
+            return (
+                rect.bottom >= 0 &&
+                rect.top <= (window.innerHeight || document.documentElement.clientHeight));
+
+        }
+
+        function getElementsInViewport() {
+            var len = $('.conspect-block').length;
+            var vis_elements = [];
+            for (var i = 0; i < len; i = i + 1) {
+                if (isInViewport($('.conspect-block')[i])) {
+                    vis_elements.push($('.conspect-block')[i]);
+                }
+            }
+
+            return vis_elements;
+        }
+
+        function flatten(x) {
+            var res = [];
+
+            for (const i of x) {
+                console.log(i);
+                res = res.concat(i);
+                console.log(res);
+            }
+            return res;
+        }
+
+        function toTerms(x) {
+            var res = {};
+            for (const i of x) {
+                console.log(i);
+                if (i["type"] === "tag") {
+                    if (i["name"] === "Th") {
+                        res[i["options"]["name"]] = i;
+                    } else if (i["name"] === "Def") {
+                        for (const j of i["children"]) {
+                            console.log(j);
+                            if (j["name"] === "Term") {
+                                res[j["children"][0]["text"]] = i;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        function findLinks(tree) {
+            var res = [];
+            for (const i of tree) {
+
+                if (i["children"]) {
+                    res = res.concat(findLinks(i["children"]));
+
+                }
+                if (i["name"] === "L") {
+
+                    res.push(i["children"][0]["text"]);
+
+                }
+            }
+            return res;
+        }
+
+        const message = document.querySelector('.conspect-comments');
+        const endpoint = "http://martylee.ru/api/";
+        const cur_index = 0;
+
+
+        window.onload = function() {
+            getTitles();
+
+        };
+
+    function visualuzeTerms() {
+        var text = "";
+        var len = $('.conspect-block').length;
+        var visible_trees = [];
+        var trees = [];
+        getElementsInViewport().forEach(function(el,i) {
+            visible_trees.push(eval($(el).find(".tree").text()));
+        });
+
+        $(".tree").each(function(i,el) {
+            trees.push(eval($(el).text()));
+        });
+
+        visible_trees = flatten(visible_trees);
+        trees = flatten(trees);
+        var terms = toTerms(trees);
+
+
+        var links = findLinks(visible_trees)
+
+        var comments = "";
+        links.forEach((function(el,i) {
+            comments += tags_dict[terms[el]["name"]](terms[el]);
+        }));
+        $(".conspect-comments").html(comments);
+
+
+        $(".conspect-comments").children().each(function(i,el) {renderMathInElement(el,
+            {delimiters : [
+              {left: "$$", right: "$$", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\(", right: "\\)", display: false},
+              {left: "\\[", right: "\\]", display: true}
+          ]})});
+    }
+
+    var first_level;
+    var id_to_name;
+    var tree;
+
+    var conspect_id = 9;
+
+    var edit_button = false;
+    function editTitlesClick(el) {
+        if(edit_button) {
+            $('.add-title-content').hide();
+        } else {
+            $('.add-title-content').show();
+        }
+
+        edit_button = !edit_button;
+    }
+
+    function minimizeTitlesClick(el) {
+        var titles = $(el).parent().siblings(".conspect_title").each(function(i, x) {$(x).toggle("show")})
+        console.log(titles);
+
+    }
+
+
+    function minimizeTitle() {
+        return `
+                <img class = "minimize-title" src = "arrow-down.png" onclick = "minimizeTitlesClick(this)"/>
+        `
+    }
+
+    function conspectTree(v) {
+        var text = "";
+        text = "<div class = \"conspect_title\" key = " + v + `>`+`<div class = "title-name"  ><div onclick = "selectTitle(this)">` +  id_to_name[v] + "</div>" + minimizeTitle() + "</div>";
+
+        for (const x of tree[v]) {
+            text += conspectTree(x);
+        }
+        text += addTitleComponent();
+        text += "</div>";
+        return text;
+    }
+
+    function getPrevTitle(el) {
+
+    }
+
+    function addTitleEvent(el) {
+        if (el.key == "Enter") {
+
+            var prev_title_id = $(el.target).parent().clone().children().remove().end().attr("key");
+            var prev_title = id_to_name[prev_title_id];
+            var title = $(el.target).text();
+
+
+
+            console.log(tree);
+            console.log(title);
+
+            console.log(id_to_name[prev_title_id]);
+            console.log(prev_title_id);
+
+
+            if (prev_title == "") {
+                $.ajax({
+                    type: "POST",
+                    url : endpoint + "conspect",
+                    data : JSON.stringify({title: title}),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success : function(data) {
+                        var id = data["id"];
+                        id_to_name[id] = title;
+                        tree[id] = []
+                        first_level.push(id);
+
+                        addTitle($(el.target), $(el.target).text(), id);
+                        $(el.target).text("");
+                        $(el.target).blur();
+                    }
+                });
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url : endpoint + "conspect",
+                    data : JSON.stringify({title: title, prev_title : prev_title}),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success : function(data) {
+                        var id = data["id"];
+                        id_to_name[id] = title;
+                        tree[id] = []
+                        tree[prev_title_id].push(id);
+
+                        addTitle($(el.target), $(el.target).text(), id);
+                        $(el.target).text("");
+                        $(el.target).blur();
+                    }
+                });
+            }
+        }
+    }
+
+    function selectTitle(el) {
+        var key = $(el).parent().parent().attr("key");
+
+        var title = id_to_name[key];
+        conspect_id = key;
+        loadConspect();
+    }
+
+
+    function addTitle(el, text, v) {
+        console.log(el);
+        (el).before($(`<div class = "conspect_title" key = ` + v + `">` +`<div class = "title-name"><div onclick = "selectTitle(this)">` +  text + "</div>" + minimizeTitle() + "</div>"+addTitleComponent() + `</div>` ));
+
+        $('.add-title-content').each(function(i,x) {x.addEventListener("keyup", addTitleEvent)});
+
+
+    }
+
+    function addTitleComponent() {
+        return `
+                    <div class = "add-title-content" contenteditable = "true">
+                    </div>
+                `
+    }
+
+    function getTitles() {
+        $.ajax({
+            type: "GET",
+            url : endpoint + "conspect",
+            dataType: "json",
+            success : function(data) {
+                first_level = data["first_level"];
+                id_to_name = data["id_to_name"];
+                tree = data["tree"];
+                conspect_id = first_level[0];
+
+                var conspect_tree = "";
+
+                for (const x of first_level) {
+                    conspect_tree += conspectTree(x);
+                }
+
+                conspect_tree += addTitleComponent();
+
+                $(".conspect-titles").append(conspect_tree);
+
+                $('.add-title-content').each(function(i,x) {console.log(x);x.addEventListener("keyup", addTitleEvent)});
+                $('.add-title-content').hide();
+
+                loadConspect();
+            }
+        });
+    }
+
+    function loadConspect() {
+        $.ajax({
+            type: "GET",
+            url : endpoint + "conspect/" + conspect_id + "/texts",
+
+            success: function(data) {
+                $(".conspect-block").each(function(i,el) {el.remove()});
+
+                for (const x of data["texts"]) {
+                    addBlock(x['text'], x['id']);
+                }
+                $(".compile-button").each(function(idx, el) {compileMaths(el)});
+                visualuzeTerms();
+            }
+        })
+
+        $(".conspect-write-body")[0].addEventListener('scroll', visualuzeTerms , {
+            passive: true
+        });
+    }
+
+
+
+
+
+
+    </script>
+
+
+</html>

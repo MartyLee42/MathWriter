@@ -1,0 +1,229 @@
+body, html {
+    height : 100%;
+    width : 100%;
+    background-color: #181c21;
+    margin : 0;
+}
+
+.menu {
+    background-color: #5670a9;
+    height : 40px;
+}
+
+.edit-button-container {
+    display : flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.save-button {
+    padding-top:5px;
+    padding-left:  10px;
+}
+
+.edit-titles-button {
+    border : 1px solid #7d87a8;
+    padding : 5px;
+    border-radius: 5px;
+}
+
+.conspect {
+    display: flex;
+    overflow: hidden;
+    height : 95vh;
+
+    position: relative;
+    width: 100%;
+    backface-visibility: hidden;
+    will-change: overflow;
+
+}
+
+.conspect-write-body {
+    flex:1;
+    overflow: auto;
+    height: auto;
+    display : flex;
+
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    display : flex;
+    flex-direction : column;
+    j
+    flex: 1;
+
+    background-color: #f2f2f2;
+
+}
+
+.theorem {
+
+    flex : 1;
+    margin-top:10px;
+
+}
+
+.theorem-content {
+
+}
+
+.theorem-title {
+    float:left;
+    margin-top: 0px;
+    height: 0px;
+    margin-right : 15px;
+}
+
+.conspect-block-tree {
+    display : none;
+}
+
+.conspect-block-write-area {
+    flex : 95;
+}
+
+.conspect-block-compiled-area {
+    flex : 95;
+}
+
+.conspect-block-write-area:focus {
+    outline: none;
+}
+
+.add-button-container {
+    display : flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    margin: 10px;
+}
+
+.add-button {
+    padding : 5px;
+    margin-top:10px;
+    margin-bottom:10px;
+    border: 1px solid gray;
+    border-radius: 5px;
+
+}
+
+.edit-titles-button:hover {
+    color:white;
+    border-color: white;
+}
+
+.add-button,
+.compile-button  {
+    transition-duration: .2s;
+}
+
+.add-button {
+    margin-bottom: 30px;
+}
+
+.add-button:hover,
+.compile-button:hover {
+    background-color: #5570a9;
+    border-color:#5570a9;
+    border-radius:20px;
+
+
+
+}
+
+.add-title {
+    margin-top:5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+
+.add-title-content {
+    height : 5px;
+
+
+
+}
+.add-title-content:focus {
+    outline: none;
+    height : 25px;
+    margin-top:10px;
+    height: fit-content;
+}
+.add-title-content::before {
+    content : "⦾  ";
+}
+
+
+.conspect-titles {
+    overflow: auto;
+    height: auto;
+    padding: .5rem;
+    flex:0.3;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    font-family: fantasy;
+
+    color:#7d87a8;
+    background-color: #181c21;
+}
+
+.conspect_title {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-top:10px;
+    color:#7d87a8;
+}
+
+.title-name {
+    display : flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.minimize-title {
+    height : 0px;
+}
+
+.title-name:hover  .minimize-title {
+    margin-left : 5px;
+    height : 20px;
+
+}
+
+.conspect_title:hover {
+    color:white;
+}
+
+.conspect-comments {
+    flex : 1;
+    overflow: auto;
+    height: auto;
+    padding: .5rem;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    background-color: #f2f2f2;
+}
+
+.compile-button {
+    padding : 5px;
+    margin : 5px;
+    height : 20px;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.conspect-block {
+
+    display : flex;
+    flex-direction: row;
+    justify-content: space-between;
+    border : 1px solid gray;
+    border-radius : 3px;
+    
+    margin : 10px;
+    padding : 10px;
+    background-color: #eeeeee;
+}
